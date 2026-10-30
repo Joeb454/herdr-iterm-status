@@ -18,3 +18,13 @@ assert_contains() {
     return 1
   fi
 }
+
+# bash 3.2 can exit 0 when `source` of a missing file fails under set -e, so check first.
+load_lib() {
+  if [[ ! -f "$ROOT/lib/$1.sh" ]]; then
+    echo "    missing lib/$1.sh" >&2
+    return 1
+  fi
+  # shellcheck disable=SC1090
+  source "$ROOT/lib/$1.sh"
+}

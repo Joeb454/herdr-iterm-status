@@ -1,0 +1,5 @@
+099EBE12-4983-4FD1-9C73-64D7E9FE9D7F	macbook.local: infrastructure (herdr)	macbook.local: infrastructure (herdr)	308x83	\/dev\/ttys000
+BDB7E79D-1486-4C3A-BDDE-3027C2C32367	Refactor the billing module (claude)	Refactor the billing module (claude)	308x83	\/dev\/ttys016
+206ECBC4-D32F-4292-9C74-946A88B523E6	Write release notes (claude)	Write release notes (claude)	308x83	\/dev\/ttys018
+9C352A03-ECEF-45E2-BD8D-550FCCBE1F80	~\/projects\/api (-zsh)	~/projects/api (-zsh)	185x54	\/dev\/ttys010
+62BFDC7E-C1C1-4E25-8845-393D1C4579FA	Herdr iTerm2 title bar integration (claude)	Herdr iTerm2 title bar integration (claude)	185x54	\/dev\/ttys017

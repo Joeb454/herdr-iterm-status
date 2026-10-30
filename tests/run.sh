@@ -14,7 +14,7 @@ for file in tests/*.test.sh; do
   source "$file"
   for t in $(declare -F | awk '{print $3}' | grep '^test_'); do
     # Not run as an `if` condition: that context silently disables set -e inside the test.
-    (set -e; TEST_TMP="$(mktemp -d)"; export TEST_TMP; trap 'rm -rf "$TEST_TMP"' EXIT; "$t")
+    (set -e; TEST_TMP="$(mktemp -d)"; export TEST_TMP; trap 'rc=$?; rm -rf "$TEST_TMP"; exit $rc' EXIT; "$t")
     rc=$?
     if [[ $rc -eq 0 ]]; then
       printf 'PASS %s\n' "$t"; pass=$((pass + 1))
