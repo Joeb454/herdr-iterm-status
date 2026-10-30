@@ -44,6 +44,10 @@ test_language_from_apple_langs() {
   assert_eq "$(jq -r '.working.other' "$ROOT/locales/pt-BR.json" | sed 's/{count}/2/')" \
     "$(working_status 2 '' '("pt-PT")')" "pt-PT falls to pt-BR"
   assert_eq "2 working" "$(working_status 2 '' '("fr-FR")')" "unsupported → English"
+  assert_eq "2 working" "$(working_status 2 '' '("zh-Hant-TW")')" "Traditional Chinese is not zh-Hans"
+  assert_eq "2 working" "$(working_status 2 '' '("zh-TW")')" "Taiwan implies Traditional"
+  assert_eq "$(jq -r '.working.other' "$ROOT/locales/de.json" | sed 's/{count}/2/')" \
+    "$(working_status 2 '' '("de-AT")')" "regional variant falls to its language"
   assert_eq "$(jq -r '.working.other' "$ROOT/locales/zh-Hans.json" | sed 's/{count}/2/')" \
     "$(working_status 2 '' '("zh-Hans-CN")')" "script subtag matches zh-Hans"
 }

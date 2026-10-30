@@ -17,9 +17,12 @@ source "$ROOT/lib/clients.sh"
 # shellcheck source=lib/watch.sh
 source "$ROOT/lib/watch.sh"
 
-LOCK="$STATE/lock"
-DIRTY="$STATE/dirty"
-WORK="$STATE/work"
+# The plugin's state dir is shared by every herdr session, so lock, dirty flag and scratch
+# files are per session: one session's run must never swallow another's update.
+SESSION_STATE="$STATE/session-$(printf '%s' "${HERDR_SOCKET_PATH:?HERDR_SOCKET_PATH is not set}" | cksum | cut -d' ' -f1)"
+LOCK="$SESSION_STATE/lock"
+DIRTY="$SESSION_STATE/dirty"
+WORK="$SESSION_STATE/work"
 
 acquire_lock() {
   if mkdir "$LOCK" 2>/dev/null; then
@@ -48,7 +51,7 @@ release_lock() {
 # Only for herdr started from iTerm2: anyone else would be nagged about a tool they don't use.
 nudge_api_off() {
   [[ "${TERM_PROGRAM:-}" == "iTerm.app" ]] || return 0
-  local marker="$STATE/nudged-$PPID"
+  local marker="$SESSION_STATE/nudged-$PPID"
   [[ -e "$marker" ]] && return 0
   touch "$marker"
   "$HERDR" notification show "iTerm status needs the Python API" \
@@ -106,12 +109,15 @@ update_once() {
     [[ "$sid" =~ ^[A-Fa-f0-9-]+$ ]] || continue
     run_it2 "${args[0]}" "${args[1]}" "--session=$sid" "${args[@]:2}" >/dev/null || true
     while IFS=$'\t' read -r pid line; do
-      [[ "$line" == "$tty" ]] && start_watcher "$pid" "$sid" "$tty"
+      if [[ "$line" == "$tty" ]]; then
+        start_watcher "$pid" "$sid" "$tty"
+      fi
     done <<< "$clients"
   done <<< "$sessions"
+  return 0
 }
 
-mkdir -p "$STATE"
+mkdir -p "$SESSION_STATE"
 # Mark dirty before trying the lock: a holder that is just finishing re-checks this flag
 # after releasing, so a burst never ends on a stale state.
 touch "$DIRTY"
@@ -120,7 +126,8 @@ while [[ -e "$DIRTY" ]]; do
   trap release_lock EXIT
   while [[ -e "$DIRTY" ]]; do
     rm -f "$DIRTY"
-    update_once
+    # One failed pass must not end the loop: a newer run's dirty flag would be stranded.
+    update_once || true
   done
   release_lock
   trap - EXIT

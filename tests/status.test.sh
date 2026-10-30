@@ -92,3 +92,9 @@ test_leading_dashes_stay_in_value() {
   out="$(run_status "[$(agent blocked '--session=x')]")"
   assert_eq "$(set_lines 'Needs input: --session=x · infrastructure' '#ff5f57')" "$out" "dashes stay inside the --status= element"
 }
+
+test_strips_all_format_characters() {
+  local out
+  out="$(run_status '[{"agent":"claude","agent_status":"blocked","workspace_id":"w84","terminal_title_stripped":"a؜b﻿c⁠d­e󠁁f"}]')"
+  assert_eq "$(set_lines 'Needs input: abcdef · infrastructure' '#ff5f57')" "$out" "Cf characters stripped"
+}

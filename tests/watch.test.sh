@@ -8,10 +8,13 @@ setup_watch_env() {
 mkdir -p "$STUB_DIR/calls"
 printf '%s\0' "$@" > "$STUB_DIR/calls/$$"
 STUB
-  # ps -t TTY -o comm= lists what runs on a terminal; STUB_HERDR_ON_TTY simulates a re-attach.
+  # ps -t TTY lists what runs on a terminal; herdr-on-tty holds the pid of a re-attached client.
   cat > "$TEST_TMP/bin/ps" <<'STUB'
 #!/bin/bash
-[[ "$1" == "-t" && -f "$STUB_DIR/herdr-on-tty" ]] && echo "herdr"
+if [[ "$1" == "-t" && -f "$STUB_DIR/herdr-on-tty" ]]; then
+  p="$(cat "$STUB_DIR/herdr-on-tty")"
+  kill -0 "$p" 2>/dev/null && echo "$p /opt/homebrew/bin/herdr"
+fi
 exit 0
 STUB
   chmod +x "$TEST_TMP"/bin/*
@@ -34,12 +37,17 @@ test_clears_after_client_exit() {
     "$(calls_as_lines)" "one clear call for the session"
 }
 
-test_skips_clear_when_client_reattached() {
+test_hands_over_to_reattached_client() {
   setup_watch_env
-  touch "$TEST_TMP/herdr-on-tty"
-  sleep 0.5 &
-  /bin/bash "$ROOT/bin/watch-client.sh" "$!" SESSION-1 /dev/ttys042
-  assert_eq "" "$(calls_as_lines)" "a new herdr client on the tty keeps its status"
+  sleep 0.3 &
+  local first=$!
+  sleep 1.5 &
+  echo "$!" > "$TEST_TMP/herdr-on-tty"
+  local start=$SECONDS
+  /bin/bash "$ROOT/bin/watch-client.sh" "$first" SESSION-1 /dev/ttys042
+  [[ $((SECONDS - start)) -ge 1 ]] || { echo "    cleared before the re-attached client left" >&2; return 1; }
+  assert_eq "$(printf 'session\nset-status\n--session=SESSION-1\n--status\n\n--dot-color\n\n--text-color\n')" \
+    "$(calls_as_lines)" "cleared once, after the second client exits"
 }
 
 test_single_watcher_per_client() {

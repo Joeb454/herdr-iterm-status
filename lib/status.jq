@@ -6,9 +6,9 @@ def config: reduce $config[] as $c ({}; . * $c);
 def sanitise($max):
   tostring
   | gsub("[\\t\\n\\r]"; " ")
-  # Controls, zero-width marks and bidi overrides: an agent title must not be able to
+  # Controls and format characters (zero-width, bidi, tags): an agent title must not be able to
   # emit escapes or visually reorder the subtitle.
-  | gsub("[\\p{Cc}\\x{200B}-\\x{200F}\\x{202A}-\\x{202E}\\x{2066}-\\x{2069}]"; "")
+  | gsub("[\\p{Cc}\\p{Cf}]"; "")
   | gsub("\\s+"; " ")
   | ltrimstr(" ") | rtrimstr(" ")
   | if length > $max then .[0:$max - 1] + "…" else . end;
@@ -18,6 +18,9 @@ def supported: [$locales[] | ._lang];
 # AppleLanguages is a plist array printed by `defaults`, e.g. ( "en-GB", "ja-JP" ).
 def preferred_languages: [$apple_langs | scan("\"([^\"]+)\"") | .[0]];
 
+# Traditional Chinese must not fall through to zh-Hans: English beats the wrong script.
+def traditional_chinese: test("^zh-(Hant|TW|HK|MO)(-|$)");
+
 def pick_language:
   supported as $s
   | (config.language // "auto") as $want
@@ -26,8 +29,9 @@ def pick_language:
       first(
         (preferred_languages[] as $p
           | ($s[] | select(. == $p)),
-            ($s[] | select(($p | startswith(. + "-")))),
-            ($s[] | select((. | split("-")[0]) == ($p | split("-")[0])))),
+            ($s[] | . as $l | select($p | startswith($l + "-"))),
+            ($s[] | select(($p | traditional_chinese | not)
+                           and (split("-")[0]) == ($p | split("-")[0])))),
         "en")
     end;
 

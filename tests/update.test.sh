@@ -78,3 +78,49 @@ test_no_client_noop() {
   /bin/bash "$ROOT/bin/update.sh"
   assert_eq 0 "$(it2_call_count)" "nothing to update"
 }
+
+test_second_client_on_other_tty_still_succeeds() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  sleep 5 &
+  export STUB_CLIENT2_PID=$!
+  # The second client (higher pid, listed last) sits on a tty iTerm doesn't know.
+  cat > "$TEST_TMP/bin/lsof" <<'STUB'
+#!/bin/bash
+sed "s/ 7661 / $STUB_CLIENT_PID /" "$STUB_FIXTURES/lsof-default.txt"
+echo "herdr      $STUB_CLIENT2_PID  user   4u  unix 0x9999999999999999      0t0      ->0xaa31870001cecfb6"
+STUB
+  cat > "$TEST_TMP/bin/ps" <<'STUB'
+#!/bin/bash
+case "${*: -1}" in "$STUB_CLIENT_PID") echo ttys000 ;; "$STUB_CLIENT2_PID") echo ttys009 ;; *) echo "??" ;; esac
+STUB
+  local rc=0
+  /bin/bash "$ROOT/bin/update.sh" || rc=$?
+  assert_eq 0 "$rc" "hook succeeds"
+  assert_contains "--status=Needs input: Project roadmap next steps" "$(last_it2_call)" "tab updated"
+}
+
+test_sessions_do_not_share_a_lock() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  # Session A's run holds the lock (slow it2) while session B's hook fires.
+  export STUB_IT2_DELAY=1
+  /bin/bash "$ROOT/bin/update.sh" &
+  local a=$!
+  sleep 0.3
+  cat > "$TEST_TMP/bin/lsof" <<'STUB'
+#!/bin/bash
+cat "$STUB_FIXTURES/lsof-two-sessions.txt"
+STUB
+  cat > "$TEST_TMP/bin/ps" <<'STUB'
+#!/bin/bash
+[[ "${*: -1}" == "9101" ]] && echo ttys005 || echo "??"
+STUB
+  printf 'BBBBBBBB-0000-0000-0000-000000000000\tseize\tseize\t80x24\t\\/dev\\/ttys005\n' >> "$TEST_TMP/it2-extra.txt"
+  cat "$FIXTURES/it2-list.txt" "$TEST_TMP/it2-extra.txt" > "$TEST_TMP/it2-list.txt"
+  sed -i '' "s|\$STUB_FIXTURES/it2-list.txt|$TEST_TMP/it2-list.txt|" "$TEST_TMP/bin/it2"
+  HERDR_SOCKET_PATH=/Users/test/.config/herdr/sessions/seize/herdr.sock STUB_IT2_DELAY=0 /bin/bash "$ROOT/bin/update.sh"
+  wait "$a"
+  grep -rlq -- '--session=BBBBBBBB-0000-0000-0000-000000000000' "$TEST_TMP/calls" \
+    || { echo "    session B's tab never updated" >&2; return 1; }
+}
