@@ -28,13 +28,17 @@ mkdir -p "$STUB_DIR/calls"
 printf '%s\0' "$@" > "$STUB_DIR/calls/$(printf '%04d' "$n")"
 echo "end" >> "$STUB_DIR/timeline"
 STUB
+  # A short-lived fake client stands in for the fixture's pid, so the watchers update.sh
+  # starts track a process this test owns (and that exits on its own).
+  sleep 5 &
+  export STUB_CLIENT_PID=$!
   cat > "$TEST_TMP/bin/lsof" <<'STUB'
 #!/bin/bash
-cat "$STUB_FIXTURES/lsof-default.txt"
+sed "s/ 7661 / $STUB_CLIENT_PID /" "$STUB_FIXTURES/lsof-default.txt"
 STUB
   cat > "$TEST_TMP/bin/ps" <<'STUB'
 #!/bin/bash
-[[ "${*: -1}" == "7661" ]] && echo "ttys000" || echo "??"
+[[ "${*: -1}" == "$STUB_CLIENT_PID" ]] && echo "ttys000" || echo "??"
 STUB
   cat > "$TEST_TMP/bin/defaults" <<'STUB'
 #!/bin/bash

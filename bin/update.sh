@@ -14,6 +14,8 @@ DEFAULTS_BIN="${DEFAULTS_BIN:-/usr/bin/defaults}"
 source "$ROOT/lib/common.sh"
 # shellcheck source=lib/clients.sh
 source "$ROOT/lib/clients.sh"
+# shellcheck source=lib/watch.sh
+source "$ROOT/lib/watch.sh"
 
 LOCK="$STATE/lock"
 DIRTY="$STATE/dirty"
@@ -40,10 +42,6 @@ acquire_lock() {
 
 release_lock() {
   rm -rf "$LOCK"
-}
-
-start_watcher() {
-  :
 }
 
 # Writes the jq inputs to $WORK and prints the it2 argv NUL-separated.
@@ -92,7 +90,7 @@ update_once() {
     [[ "$sid" =~ ^[A-Fa-f0-9-]+$ ]] || continue
     run_it2 "${args[0]}" "${args[1]}" "--session=$sid" "${args[@]:2}" >/dev/null || true
     while IFS=$'\t' read -r pid line; do
-      [[ "$line" == "$tty" ]] && start_watcher "$pid" "$sid"
+      [[ "$line" == "$tty" ]] && start_watcher "$pid" "$sid" "$tty"
     done <<< "$clients"
   done <<< "$sessions"
 }
