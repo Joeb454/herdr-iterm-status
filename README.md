@@ -18,13 +18,21 @@ The tab title itself stays herdr's (`ui.window_title`). The subtitle clears when
 
 - macOS with iTerm2 3.7 or later
 - herdr 0.9.5 or later
-- Nothing else: the plugin is Bash and `jq`, both of which ship with macOS
+- Nothing else: the plugin is Bash and `jq`, both of which ship with macOS 15 and later (on older versions, `brew install jq`)
 
 ## Install
 
 ```bash
-herdr plugin link /path/to/this/repo
+herdr plugin install Joeb454/herdr-iterm-status
 ```
+
+herdr shows what the plugin will run and asks before installing. To update later:
+
+```bash
+herdr plugin update joeb454.iterm-status
+```
+
+Updates take the latest commit on `main`. To stay on a release, install with `--ref v0.1.0`.
 
 ### Turn on iTerm2's Python API
 
@@ -34,6 +42,8 @@ The plugin talks to iTerm2 through `it2`, which needs the Python API:
 2. Tick **Enable Python API**.
 3. If iTerm2 asks whether to allow a connection, choose **Allow**.
 
+iTerm2's own docs cover [the setting](https://iterm2.com/documentation-preferences-general.html) and [how the API is secured](https://iterm2.com/python-api-auth.html).
+
 Then check everything is in place. Either bind the action to a key, or run:
 
 ```bash
@@ -41,6 +51,10 @@ herdr plugin action invoke joeb454.iterm-status.doctor
 ```
 
 A popup lists each check, with the fix for anything that fails. If the API is off, the plugin shows one herdr notification per server run pointing you here.
+
+## How it works
+
+herdr runs the plugin whenever an agent's state changes. It reads every agent's state from herdr, finds the iTerm2 tabs attached to this herdr session, and sets their subtitle and dot through `it2`. A small background watcher clears the subtitle when you detach or quit herdr. If you re-attach in the same tab within a few seconds, it carries on watching the new client instead.
 
 ## Settings
 
@@ -85,6 +99,11 @@ The non-English strings are machine-drafted and not yet reviewed by native speak
 - iTerm2 only. Other terminals get nothing.
 - herdr attached over SSH (`--remote`) or used through `--machine` isn't supported.
 - Each herdr session updates only the iTerm2 tabs attached to that session.
+- The watcher checks every few seconds, so the subtitle can linger briefly after you detach.
+
+## Contributing
+
+Issues and pull requests are welcome, especially corrections to the translations.
 
 ## Development
 
@@ -93,3 +112,7 @@ tests/run.sh                                  # all tests
 tests/run.sh status                           # one file
 shellcheck bin/*.sh lib/*.sh tests/*.sh
 ```
+
+## Licence
+
+[MIT](LICENSE)
