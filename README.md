@@ -12,7 +12,7 @@ A [herdr](https://herdr.dev) plugin that shows what your agents are doing on the
 
 The tab title itself stays herdr's (`ui.window_title`). The subtitle clears when you detach or quit herdr.
 
-<!-- screenshot -->
+![Three herdr tabs in iTerm2: one red with "Needs input: Refactor the billing module · web-app", one amber with "3 working · 1 done", one blue with "1 done"](docs/tab-bar.png)
 
 ## Requirements
 
