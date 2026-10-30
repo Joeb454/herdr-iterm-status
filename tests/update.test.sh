@@ -124,3 +124,15 @@ STUB
   grep -rlq -- '--session=BBBBBBBB-0000-0000-0000-000000000000' "$TEST_TMP/calls" \
     || { echo "    session B's tab never updated" >&2; return 1; }
 }
+
+test_hung_herdr_does_not_hold_the_lock() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  touch "$TEST_TMP/herdr-hang"
+  local start=$SECONDS
+  HERDR_TIMEOUT=1 /bin/bash "$ROOT/bin/update.sh"
+  [[ $((SECONDS - start)) -lt 4 ]] || { echo "    hook waited $((SECONDS - start))s on a hung herdr" >&2; return 1; }
+  rm "$TEST_TMP/herdr-hang"
+  /bin/bash "$ROOT/bin/update.sh"
+  assert_contains "--status=Needs input: Project roadmap next steps" "$(last_it2_call)" "next run still updates"
+}

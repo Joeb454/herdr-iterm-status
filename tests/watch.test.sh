@@ -63,6 +63,7 @@ test_single_watcher_per_client() {
   second="$(cat "$TEST_TMP/state/watch-$client-SESSION-1")"
   third="$(pgrep -f "watch-client $client SESSION-1" | wc -l | tr -d ' ')"
   kill "$client" "$first" 2>/dev/null || true
+  wait "$client" "$first" 2>/dev/null || true
   assert_eq "$first" "$second" "same watcher reused"
   assert_eq 1 "$third" "exactly one watcher process"
 }

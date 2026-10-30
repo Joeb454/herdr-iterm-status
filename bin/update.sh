@@ -61,8 +61,8 @@ nudge_api_off() {
 # Writes the jq inputs to $WORK and prints the it2 argv NUL-separated.
 compute_args() {
   mkdir -p "$WORK"
-  "$HERDR" agent list > "$WORK/agents.json"
-  "$HERDR" workspace list > "$WORK/workspaces.json"
+  run_with_timeout "${HERDR_TIMEOUT:-5}" "$HERDR" agent list > "$WORK/agents.json"
+  run_with_timeout "${HERDR_TIMEOUT:-5}" "$HERDR" workspace list > "$WORK/workspaces.json"
   cat "$ROOT"/locales/*.json > "$WORK/locales.json"
   cp "$ROOT/config.default.json" "$WORK/config.json"
   local user="$CONFIG_DIR/config.json"

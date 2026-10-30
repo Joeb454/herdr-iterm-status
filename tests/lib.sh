@@ -37,7 +37,7 @@ setup_update_env() {
   cat > "$TEST_TMP/bin/herdr" <<'STUB'
 #!/bin/bash
 case "$1 $2" in
-  "agent list") cat "$STUB_DIR/agents.json" ;;
+  "agent list") [[ -f "$STUB_DIR/herdr-hang" ]] && exec sleep 30; cat "$STUB_DIR/agents.json" ;;
   "workspace list") cat "$STUB_DIR/workspaces.json" ;;
   "notification show") printf '%s\n' "$*" >> "$STUB_DIR/herdr.log" ;;
   *) exit 2 ;;
