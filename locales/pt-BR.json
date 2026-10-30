@@ -1,0 +1,11 @@
+{
+  "_lang": "pt-BR",
+  "_review": "machine-drafted; needs native-speaker review before publishing",
+  "needs_input_named": "Aguardando você: {agent} · {space}",
+  "needs_input_unnamed": "Aguardando você: {agent}",
+  "needs_input": {"one": "{count} aguardando você", "other": "{count} aguardando você"},
+  "working": {"one": "{count} trabalhando", "other": "{count} trabalhando"},
+  "done": {"one": "{count} concluído", "other": "{count} concluídos"},
+  "idle": "ocioso",
+  "separator": " · "
+}

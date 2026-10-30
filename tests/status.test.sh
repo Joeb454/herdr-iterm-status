@@ -1,31 +1,6 @@
 #!/bin/bash
 # lib/status.jq: agent list + workspaces + config + locales -> it2 argv.
 
-# agent <status> [title] [workspace_id] -> one AgentInfo JSON object
-agent() {
-  jq -cn --arg s "$1" --arg t "${2-}" --arg w "${3:-w84}" \
-    '{agent:"claude", agent_status:$s, workspace_id:$w, pane_id:"\($w):p1"}
-     + (if $t == "" then {} else {terminal_title_stripped:$t} end)'
-}
-
-# run_status <agents-json-array> [config-override-json] [apple-langs-text]
-# Prints the action, then one argv element per line.
-run_status() {
-  printf '{"result":{"agents":%s}}' "$1" > "$TEST_TMP/agents.json"
-  local cfg='{}' langs='("en-GB")'
-  [[ -n "${2:-}" ]] && cfg="$2"
-  [[ -n "${3:-}" ]] && langs="$3"
-  printf '%s' "$cfg" > "$TEST_TMP/user-config.json"
-  printf '%s' "$langs" > "$TEST_TMP/langs.txt"
-  cat "$ROOT"/locales/*.json > "$TEST_TMP/locales.json"
-  jq -nr -f "$ROOT/lib/status.jq" \
-    --slurpfile agents "$TEST_TMP/agents.json" \
-    --slurpfile workspaces "$FIXTURES/workspaces.json" \
-    --slurpfile config <(cat "$ROOT/config.default.json" "$TEST_TMP/user-config.json") \
-    --slurpfile locales "$TEST_TMP/locales.json" \
-    --rawfile apple_langs "$TEST_TMP/langs.txt" | jq -r '.action, .args[]'
-}
-
 set_lines() {
   printf 'set\nsession\nset-status\n--status=%s\n--dot-color=%s\n--text-color=%s' "$1" "$2" "$2"
 }

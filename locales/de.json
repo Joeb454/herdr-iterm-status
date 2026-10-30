@@ -1,0 +1,11 @@
+{
+  "_lang": "de",
+  "_review": "machine-drafted; needs native-speaker review before publishing",
+  "needs_input_named": "Eingabe nötig: {agent} · {space}",
+  "needs_input_unnamed": "Eingabe nötig: {agent}",
+  "needs_input": {"one": "{count} braucht Eingabe", "other": "{count} brauchen Eingabe"},
+  "working": {"other": "{count} aktiv"},
+  "done": {"other": "{count} fertig"},
+  "idle": "inaktiv",
+  "separator": " · "
+}

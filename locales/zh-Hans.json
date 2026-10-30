@@ -1,0 +1,11 @@
+{
+  "_lang": "zh-Hans",
+  "_review": "machine-drafted; needs native-speaker review before publishing",
+  "needs_input_named": "需要输入: {agent} · {space}",
+  "needs_input_unnamed": "需要输入: {agent}",
+  "needs_input": {"other": "{count} 个需要输入"},
+  "working": {"other": "{count} 个运行中"},
+  "done": {"other": "{count} 个已完成"},
+  "idle": "空闲",
+  "separator": " · "
+}

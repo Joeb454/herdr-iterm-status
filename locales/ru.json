@@ -1,0 +1,11 @@
+{
+  "_lang": "ru",
+  "_review": "machine-drafted; needs native-speaker review before publishing",
+  "needs_input_named": "Нужен ответ: {agent} · {space}",
+  "needs_input_unnamed": "Нужен ответ: {agent}",
+  "needs_input": {"one": "{count} агент ждёт ответа", "few": "{count} агента ждут ответа", "many": "{count} агентов ждут ответа", "other": "{count} агента ждут ответа"},
+  "working": {"one": "{count} агент работает", "few": "{count} агента работают", "many": "{count} агентов работают", "other": "{count} агента работают"},
+  "done": {"one": "{count} агент готов", "few": "{count} агента готовы", "many": "{count} агентов готовы", "other": "{count} агента готовы"},
+  "idle": "простой",
+  "separator": " · "
+}

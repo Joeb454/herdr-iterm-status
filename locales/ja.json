@@ -1,0 +1,11 @@
+{
+  "_lang": "ja",
+  "_review": "machine-drafted; needs native-speaker review before publishing",
+  "needs_input_named": "入力待ち: {agent} · {space}",
+  "needs_input_unnamed": "入力待ち: {agent}",
+  "needs_input": {"other": "入力待ち {count}"},
+  "working": {"other": "作業中 {count}"},
+  "done": {"other": "完了 {count}"},
+  "idle": "待機中",
+  "separator": " · "
+}
