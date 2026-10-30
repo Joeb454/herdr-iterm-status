@@ -1,62 +1,7 @@
 #!/bin/bash
 # bin/update.sh end to end, with herdr, it2, lsof, ps and defaults stubbed.
 
-setup_update_env() {
-  mkdir -p "$TEST_TMP/bin" "$TEST_TMP/config" "$TEST_TMP/state"
-  cp "$FIXTURES/workspaces.json" "$TEST_TMP/workspaces.json"
 
-  cat > "$TEST_TMP/bin/herdr" <<'STUB'
-#!/bin/bash
-case "$1 $2" in
-  "agent list") cat "$STUB_DIR/agents.json" ;;
-  "workspace list") cat "$STUB_DIR/workspaces.json" ;;
-  "notification show") printf '%s\n' "$*" >> "$STUB_DIR/herdr.log" ;;
-  *) exit 2 ;;
-esac
-STUB
-  cat > "$TEST_TMP/bin/it2" <<'STUB'
-#!/bin/bash
-if [[ "$1 $2" == "session list" ]]; then
-  [[ -f "$STUB_DIR/it2-api-off" ]] && { echo "Failed to connect to iTerm2 socket" >&2; exit 1; }
-  cat "$STUB_FIXTURES/it2-list.txt"; exit 0
-fi
-echo "start" >> "$STUB_DIR/timeline"
-sleep "${STUB_IT2_DELAY:-0}"
-n=$(( $(cat "$STUB_DIR/it2.count" 2>/dev/null || echo 0) + 1 ))
-echo "$n" > "$STUB_DIR/it2.count"
-mkdir -p "$STUB_DIR/calls"
-printf '%s\0' "$@" > "$STUB_DIR/calls/$(printf '%04d' "$n")"
-echo "end" >> "$STUB_DIR/timeline"
-STUB
-  # A short-lived fake client stands in for the fixture's pid, so the watchers update.sh
-  # starts track a process this test owns (and that exits on its own).
-  sleep 5 &
-  export STUB_CLIENT_PID=$!
-  cat > "$TEST_TMP/bin/lsof" <<'STUB'
-#!/bin/bash
-sed "s/ 7661 / $STUB_CLIENT_PID /" "$STUB_FIXTURES/lsof-default.txt"
-STUB
-  cat > "$TEST_TMP/bin/ps" <<'STUB'
-#!/bin/bash
-[[ "${*: -1}" == "$STUB_CLIENT_PID" ]] && echo "ttys000" || echo "??"
-STUB
-  cat > "$TEST_TMP/bin/defaults" <<'STUB'
-#!/bin/bash
-printf '(\n    "en-GB"\n)\n'
-STUB
-  chmod +x "$TEST_TMP"/bin/*
-
-  export STUB_DIR="$TEST_TMP" STUB_FIXTURES="$FIXTURES"
-  export HERDR_BIN_PATH="$TEST_TMP/bin/herdr" HERDR_ITERM_STATUS_IT2="$TEST_TMP/bin/it2"
-  export LSOF_BIN="$TEST_TMP/bin/lsof" PS_BIN="$TEST_TMP/bin/ps" DEFAULTS_BIN="$TEST_TMP/bin/defaults"
-  export HERDR_SOCKET_PATH=/Users/test/.config/herdr/herdr.sock
-  export HERDR_PLUGIN_ROOT="$ROOT" HERDR_PLUGIN_CONFIG_DIR="$TEST_TMP/config" HERDR_PLUGIN_STATE_DIR="$TEST_TMP/state"
-}
-
-# set_agents <json-array>
-set_agents() {
-  printf '{"result":{"agents":%s}}' "$1" > "$TEST_TMP/agents.json"
-}
 
 # Last it2 set-status call, one argv element per line.
 last_it2_call() {

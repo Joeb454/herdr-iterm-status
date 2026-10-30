@@ -44,6 +44,17 @@ release_lock() {
   rm -rf "$LOCK"
 }
 
+# One notification per server run (hooks are children of the server, so $PPID names it).
+# Only for herdr started from iTerm2: anyone else would be nagged about a tool they don't use.
+nudge_api_off() {
+  [[ "${TERM_PROGRAM:-}" == "iTerm.app" ]] || return 0
+  local marker="$STATE/nudged-$PPID"
+  [[ -e "$marker" ]] && return 0
+  touch "$marker"
+  "$HERDR" notification show "iTerm status needs the Python API" \
+    --body "Run: herdr plugin action invoke joe.iterm-status.doctor" >/dev/null 2>&1 || true
+}
+
 # Writes the jq inputs to $WORK and prints the it2 argv NUL-separated.
 compute_args() {
   mkdir -p "$WORK"
@@ -78,7 +89,12 @@ update_once() {
 
   local ttys=()
   while IFS=$'\t' read -r pid tty; do ttys+=("$tty"); done <<< "$clients"
-  sessions="$(run_it2 session list 2>/dev/null | iterm_sessions_for_ttys "${ttys[@]}")" || return 0
+  local list
+  if ! list="$(run_it2 session list 2>/dev/null)"; then
+    nudge_api_off
+    return 0
+  fi
+  sessions="$(iterm_sessions_for_ttys "${ttys[@]}" <<< "$list")"
   [[ -n "$sessions" ]] || return 0
 
   local args=() a

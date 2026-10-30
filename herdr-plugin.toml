@@ -5,6 +5,21 @@ min_herdr_version = "0.9.5"
 description = "Show herdr agent status in the iTerm2 tab subtitle"
 platforms = ["macos"]
 
+[[actions]]
+id = "doctor"
+title = "iTerm status: check setup"
+contexts = ["workspace"]
+# Actions run in the background, so open the checks in a popup where they can be read.
+command = ["/bin/bash", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin joe.iterm-status --entrypoint doctor"]
+
+[[panes]]
+id = "doctor"
+title = "iTerm status setup"
+placement = "popup"
+width = 90
+height = 18
+command = ["/bin/bash", "bin/doctor.sh", "--wait"]
+
 [[startup]]
 command = ["/bin/bash", "bin/update.sh"]
 
