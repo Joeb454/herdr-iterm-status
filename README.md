@@ -37,14 +37,14 @@ The plugin talks to iTerm2 through `it2`, which needs the Python API:
 Then check everything is in place. Either bind the action to a key, or run:
 
 ```bash
-herdr plugin action invoke joe.iterm-status.doctor
+herdr plugin action invoke joeb454.iterm-status.doctor
 ```
 
 A popup lists each check, with the fix for anything that fails. If the API is off, the plugin shows one herdr notification per server run pointing you here.
 
 ## Settings
 
-Optional. Create `config.json` in the directory printed by `herdr plugin config-dir joe.iterm-status`. Any key you leave out keeps its default:
+Optional. Create `config.json` in the directory printed by `herdr plugin config-dir joeb454.iterm-status`. Any key you leave out keeps its default:
 
 ```json
 {

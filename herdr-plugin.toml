@@ -1,4 +1,4 @@
-id = "joe.iterm-status"
+id = "joeb454.iterm-status"
 name = "iTerm Status"
 version = "0.1.0"
 min_herdr_version = "0.9.5"
@@ -10,7 +10,7 @@ id = "doctor"
 title = "iTerm status: check setup"
 contexts = ["workspace"]
 # Actions run in the background, so open the checks in a popup where they can be read.
-command = ["/bin/bash", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin joe.iterm-status --entrypoint doctor"]
+command = ["/bin/bash", "-c", "exec \"$HERDR_BIN_PATH\" plugin pane open --plugin joeb454.iterm-status --entrypoint doctor"]
 
 [[panes]]
 id = "doctor"

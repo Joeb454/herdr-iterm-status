@@ -44,5 +44,5 @@ test_nudge_once_per_server() {
   /bin/bash "$ROOT/bin/update.sh"
   /bin/bash "$ROOT/bin/update.sh"
   assert_eq 1 "$(grep -c '^notification show' "$TEST_TMP/herdr.log")" "one nudge"
-  assert_contains "joe.iterm-status.doctor" "$(cat "$TEST_TMP/herdr.log")" "points at the doctor action"
+  assert_contains "joeb454.iterm-status.doctor" "$(cat "$TEST_TMP/herdr.log")" "points at the doctor action"
 }

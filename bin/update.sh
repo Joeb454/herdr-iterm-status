@@ -55,7 +55,7 @@ nudge_api_off() {
   [[ -e "$marker" ]] && return 0
   touch "$marker"
   "$HERDR" notification show "iTerm status needs the Python API" \
-    --body "Run: herdr plugin action invoke joe.iterm-status.doctor" >/dev/null 2>&1 || true
+    --body "Run: herdr plugin action invoke joeb454.iterm-status.doctor" >/dev/null 2>&1 || true
 }
 
 # Writes the jq inputs to $WORK and prints the it2 argv NUL-separated.
