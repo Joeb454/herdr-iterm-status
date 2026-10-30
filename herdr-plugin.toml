@@ -1,0 +1,10 @@
+id = "joe.iterm-status"
+name = "iTerm Status"
+version = "0.1.0"
+min_herdr_version = "0.9.5"
+description = "Show herdr agent status in the iTerm2 tab subtitle"
+platforms = ["macos"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["/bin/bash", "bin/probe.sh"]
