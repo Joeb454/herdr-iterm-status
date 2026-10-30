@@ -1,0 +1,12 @@
+{
+  "language": "auto",
+  "show_done": true,
+  "max_title_length": 48,
+  "colors": {
+    "blocked": "#ff5f57",
+    "working": "#e0a030",
+    "done": "#4a9eff",
+    "idle": "#8e8e93"
+  },
+  "strings": {}
+}

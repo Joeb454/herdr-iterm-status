@@ -1,0 +1,5 @@
+{"result":{"workspaces":[
+  {"workspace_id":"w84","label":"infrastructure","number":3},
+  {"workspace_id":"wAA","label":"web-app","number":5},
+  {"workspace_id":"wEV","label":"evil\u001bspace","number":9}
+],"type":"workspace_list"}}

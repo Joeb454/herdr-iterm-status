@@ -1,0 +1,10 @@
+{
+  "_lang": "en",
+  "needs_input_named": "Needs input: {agent} · {space}",
+  "needs_input_unnamed": "Needs input: {agent}",
+  "needs_input": {"one": "{count} needs input", "other": "{count} need input"},
+  "working": {"other": "{count} working"},
+  "done": {"other": "{count} done"},
+  "idle": "idle",
+  "separator": " · "
+}
