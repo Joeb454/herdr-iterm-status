@@ -1,0 +1,19 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    # macOS so the tests run against the system /bin/bash 3.2 and jq, as users' herdr does.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: brew install shellcheck
+      - name: Tests
+        run: tests/run.sh
+      - name: Shellcheck
+        run: shellcheck bin/*.sh lib/*.sh tests/*.sh
