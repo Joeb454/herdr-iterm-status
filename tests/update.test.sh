@@ -1,0 +1,131 @@
+#!/bin/bash
+# bin/update.sh end to end, with herdr, it2, lsof, ps and defaults stubbed.
+
+setup_update_env() {
+  mkdir -p "$TEST_TMP/bin" "$TEST_TMP/config" "$TEST_TMP/state"
+  cp "$FIXTURES/workspaces.json" "$TEST_TMP/workspaces.json"
+
+  cat > "$TEST_TMP/bin/herdr" <<'STUB'
+#!/bin/bash
+case "$1 $2" in
+  "agent list") cat "$STUB_DIR/agents.json" ;;
+  "workspace list") cat "$STUB_DIR/workspaces.json" ;;
+  "notification show") printf '%s\n' "$*" >> "$STUB_DIR/herdr.log" ;;
+  *) exit 2 ;;
+esac
+STUB
+  cat > "$TEST_TMP/bin/it2" <<'STUB'
+#!/bin/bash
+if [[ "$1 $2" == "session list" ]]; then
+  [[ -f "$STUB_DIR/it2-api-off" ]] && { echo "Failed to connect to iTerm2 socket" >&2; exit 1; }
+  cat "$STUB_FIXTURES/it2-list.txt"; exit 0
+fi
+echo "start" >> "$STUB_DIR/timeline"
+sleep "${STUB_IT2_DELAY:-0}"
+n=$(( $(cat "$STUB_DIR/it2.count" 2>/dev/null || echo 0) + 1 ))
+echo "$n" > "$STUB_DIR/it2.count"
+mkdir -p "$STUB_DIR/calls"
+printf '%s\0' "$@" > "$STUB_DIR/calls/$(printf '%04d' "$n")"
+echo "end" >> "$STUB_DIR/timeline"
+STUB
+  cat > "$TEST_TMP/bin/lsof" <<'STUB'
+#!/bin/bash
+cat "$STUB_FIXTURES/lsof-default.txt"
+STUB
+  cat > "$TEST_TMP/bin/ps" <<'STUB'
+#!/bin/bash
+[[ "${*: -1}" == "7661" ]] && echo "ttys000" || echo "??"
+STUB
+  cat > "$TEST_TMP/bin/defaults" <<'STUB'
+#!/bin/bash
+printf '(\n    "en-GB"\n)\n'
+STUB
+  chmod +x "$TEST_TMP"/bin/*
+
+  export STUB_DIR="$TEST_TMP" STUB_FIXTURES="$FIXTURES"
+  export HERDR_BIN_PATH="$TEST_TMP/bin/herdr" HERDR_ITERM_STATUS_IT2="$TEST_TMP/bin/it2"
+  export LSOF_BIN="$TEST_TMP/bin/lsof" PS_BIN="$TEST_TMP/bin/ps" DEFAULTS_BIN="$TEST_TMP/bin/defaults"
+  export HERDR_SOCKET_PATH=/Users/test/.config/herdr/herdr.sock
+  export HERDR_PLUGIN_ROOT="$ROOT" HERDR_PLUGIN_CONFIG_DIR="$TEST_TMP/config" HERDR_PLUGIN_STATE_DIR="$TEST_TMP/state"
+}
+
+# set_agents <json-array>
+set_agents() {
+  printf '{"result":{"agents":%s}}' "$1" > "$TEST_TMP/agents.json"
+}
+
+# Last it2 set-status call, one argv element per line.
+last_it2_call() {
+  local f
+  f="$(find "$TEST_TMP/calls" -type f 2>/dev/null | sort | tail -1)"
+  [[ -n "$f" ]] && tr '\0' '\n' < "$f"
+}
+
+it2_call_count() {
+  find "$TEST_TMP/calls" -type f 2>/dev/null | wc -l | tr -d ' '
+}
+
+BLOCKED_ROADMAP='{"agent":"claude","agent_status":"blocked","workspace_id":"w84","terminal_title_stripped":"Project roadmap next steps"}'
+
+test_sets_status_on_matching_tab() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  /bin/bash "$ROOT/bin/update.sh"
+  assert_eq "$(printf 'session\nset-status\n--session=099EBE12-4983-4FD1-9C73-64D7E9FE9D7F\n--status=Needs input: Project roadmap next steps · infrastructure\n--dot-color=#ff5f57\n--text-color=#ff5f57\n')" \
+    "$(last_it2_call)" "exact argv to it2"
+}
+
+test_hostile_title_argv() {
+  setup_update_env
+  local long hostile
+  long="$(printf 'x%.0s' $(seq 1 5000))"
+  hostile="--session=\$(touch $TEST_TMP/pwned)\`touch $TEST_TMP/pwned2\`; rm -rf ~ "$'\e]1337;x\a'" $long"
+  set_agents "[$(jq -cn --arg t "$hostile" '{agent:"claude",agent_status:"blocked",workspace_id:"w84",terminal_title_stripped:$t}')]"
+  /bin/bash "$ROOT/bin/update.sh"
+  [[ ! -e "$TEST_TMP/pwned" && ! -e "$TEST_TMP/pwned2" ]] || { echo "    command substitution ran" >&2; return 1; }
+  local status
+  status="$(last_it2_call | grep -- '^--status=')"
+  assert_eq 1 "$(last_it2_call | grep -c -- '^--status=')" "one --status element"
+  assert_eq 6 "$(last_it2_call | wc -l | tr -d ' ')" "argv count unchanged"
+  assert_contains "--status=Needs input: --session=\$(touch" "$status" "title kept as literal text"
+  [[ ${#status} -le 90 ]] || { echo "    status not truncated: ${#status}" >&2; return 1; }
+}
+
+test_user_config_overrides() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  echo '{"colors":{"blocked":"#000000"}}' > "$TEST_TMP/config/config.json"
+  /bin/bash "$ROOT/bin/update.sh"
+  assert_contains "--dot-color=#000000" "$(last_it2_call)" "user colour wins"
+}
+
+test_invalid_config_falls_back() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  echo '{"colors":' > "$TEST_TMP/config/config.json"
+  local err
+  err="$(/bin/bash "$ROOT/bin/update.sh" 2>&1 >/dev/null)"
+  assert_contains "--dot-color=#ff5f57" "$(last_it2_call)" "defaults used"
+  assert_contains "config.json" "$err" "warning names the file"
+}
+
+test_coalesces_burst() {
+  setup_update_env
+  export STUB_IT2_DELAY=0.2
+  set_agents "[$BLOCKED_ROADMAP]"
+  for _ in 1 2 3 4 5 6 7 8 9; do /bin/bash "$ROOT/bin/update.sh" & done
+  set_agents '[{"agent":"claude","agent_status":"working","workspace_id":"w84"}]'
+  /bin/bash "$ROOT/bin/update.sh" &
+  wait
+  assert_eq "" "$(paste -sd' ' "$TEST_TMP/timeline" | sed 's/start end//g' | tr -d ' ')" "it2 calls never overlap"
+  [[ "$(it2_call_count)" -lt 10 ]] || { echo "    no coalescing: $(it2_call_count) calls" >&2; return 1; }
+  assert_contains "--status=1 working" "$(last_it2_call)" "final state wins"
+}
+
+test_no_client_noop() {
+  setup_update_env
+  set_agents "[$BLOCKED_ROADMAP]"
+  printf '#!/bin/bash\necho "??"\n' > "$TEST_TMP/bin/ps"
+  /bin/bash "$ROOT/bin/update.sh"
+  assert_eq 0 "$(it2_call_count)" "nothing to update"
+}

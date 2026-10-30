@@ -5,6 +5,41 @@ min_herdr_version = "0.9.5"
 description = "Show herdr agent status in the iTerm2 tab subtitle"
 platforms = ["macos"]
 
+[[startup]]
+command = ["/bin/bash", "bin/update.sh"]
+
 [[events]]
 on = "pane.agent_status_changed"
-command = ["/bin/bash", "bin/probe.sh"]
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "pane.closed"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "pane.exited"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "tab.closed"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "tab.focused"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "workspace.closed"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "workspace.renamed"
+command = ["/bin/bash", "bin/update.sh"]
+
+[[events]]
+on = "workspace.focused"
+command = ["/bin/bash", "bin/update.sh"]
