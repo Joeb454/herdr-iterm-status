@@ -46,3 +46,12 @@ test_nudge_once_per_server() {
   assert_eq 1 "$(grep -c '^notification show' "$TEST_TMP/herdr.log")" "one nudge"
   assert_contains "joeb454.iterm-status.doctor" "$(cat "$TEST_TMP/herdr.log")" "points at the doctor action"
 }
+
+test_doctor_api_off_skips_tab_check() {
+  setup_update_env
+  touch "$TEST_TMP/it2-api-off"
+  local out
+  out="$(/bin/bash "$ROOT/bin/doctor.sh")" || true
+  assert_eq 1 "$(grep -c '^✗' <<< "$out")" "only the API check fails"
+  assert_contains "Skipped" "$(grep -i 'iTerm2 tab' <<< "$out")" "tab check says why it didn't run"
+}

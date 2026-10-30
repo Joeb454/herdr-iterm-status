@@ -13,6 +13,7 @@ source "$ROOT/lib/clients.sh"
 failed=0
 ok() { printf '✓ %s\n' "$1"; }
 bad() { printf '✗ %s\n  → %s\n' "$1" "$2"; failed=1; }
+skip() { printf '– %s\n' "$1"; }
 
 if [[ -x "$IT2" ]]; then
   ok "iTerm2's it2 tool found"
@@ -20,19 +21,23 @@ else
   bad "it2 not found at $IT2" "Update iTerm2 to 3.7 or later (iTerm2 → Check for Updates)."
 fi
 
+api=1
 if list="$(run_it2 session list 2>/dev/null)"; then
   ok "iTerm2 Python API is reachable"
 else
   bad "Can't reach iTerm2's Python API" \
     "In iTerm2, open Settings → General → Magic and tick 'Enable Python API'. If iTerm asks whether to allow the connection, choose Allow."
-  list=""
+  api=0
 fi
 
 sock="$(dirname "${HERDR_SOCKET_PATH:-$HOME/.config/herdr/herdr.sock}")/herdr-client.sock"
 clients="$("$LSOF_BIN" -nP -U -c herdr 2>/dev/null | client_pids_and_ttys "$sock")"
 ttys=()
 while IFS=$'\t' read -r _ tty; do [[ -n "$tty" ]] && ttys+=("$tty"); done <<< "$clients"
-if [[ ${#ttys[@]} -gt 0 && -n "$(iterm_sessions_for_ttys "${ttys[@]}" <<< "$list")" ]]; then
+# Tabs are listed through the API, so without it a missing tab would be a false alarm.
+if [[ $api -eq 0 ]]; then
+  skip "Skipped the iTerm2 tab check until the Python API is reachable"
+elif [[ ${#ttys[@]} -gt 0 && -n "$(iterm_sessions_for_ttys "${ttys[@]}" <<< "$list")" ]]; then
   ok "This herdr session is open in an iTerm2 tab"
 else
   bad "No iTerm2 tab is showing this herdr session" \
